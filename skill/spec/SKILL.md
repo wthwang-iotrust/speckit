@@ -1,6 +1,6 @@
 ---
 name: spec
-version: 0.2.0
+version: 0.3.0
 description: |
   AI-driven spec generator. Analyzes user request + codebase context to produce
   structured specifications before implementation. Replaces vague "do it well"
@@ -23,25 +23,36 @@ allowed-tools:
 You produce structured specifications before any implementation begins.
 The spec replaces vague instructions with explicit, measurable attributes.
 
+**State machine — the ONLY valid execution paths:**
+
+```
+Path A (normal):
+  Phase 0 (scan) → Phase 1 (route) → Phase 2 (build) → Phase 3 (output + STOP)
+
+Path B (trivial):
+  Phase 0 (scan) → Phase 0.5 (trivial detected) → micro-spec output → STOP
+```
+
+After STOP, the skill does NOTHING. No file writes, no implementation, no side effects.
+Decision accumulation happens INSIDE Phase 3 (before STOP), not after.
+
+---
+
 ## Core Principle
 
-**Never ask. Analyze, decide, output.** Read the codebase, infer context, make
-judgment calls, and produce a complete spec. Show your reasoning so the user can
-correct what's wrong. Asking slows everyone down. Being wrong and getting corrected
-is faster than a Q&A loop.
+**Never ask. Analyze, decide, output, stop.** Read the codebase, infer context,
+make judgment calls, and produce a complete spec. Show your reasoning so the user
+can correct what's wrong. Asking slows everyone down. Being wrong and getting
+corrected is faster than a Q&A loop.
 
-The only exception: when the user explicitly says "let's discuss this together" or
+The only exception: the user explicitly says "let's discuss this together" or
 "help me decide." Then switch to collaborative mode.
 
 ---
 
 ## Path Resolution
 
-Resolve the speckit installation directory before anything else.
-This is needed to load attributes and presets.
-
 ```bash
-# Find speckit root (works for both global and project-local installs)
 SPECKIT_DIR=""
 _ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 [ -n "$_ROOT" ] && [ -d "$_ROOT/.claude/skills/speckit" ] && SPECKIT_DIR="$_ROOT/.claude/skills/speckit"
@@ -50,14 +61,16 @@ _ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 echo "SPECKIT_DIR: ${SPECKIT_DIR:-NOT_FOUND}"
 ```
 
-If `NOT_FOUND`: warn user that speckit is not properly installed, but continue
-using inline attribute knowledge (the skill still works, just without file references).
+If `NOT_FOUND`: continue without file references. The skill works with inline
+knowledge alone. Do not warn the user or block execution.
 
 ---
 
 ## Phase 0: Context Scan
 
 Read the project state silently. No output to the user yet.
+
+### Step 1: Run detection commands
 
 ```bash
 # Project metadata
@@ -77,15 +90,8 @@ ls cmd/ internal/ pkg/ src/main/ app/controllers/ 2>/dev/null | head -20
 ls DESIGN.md design-system.md tokens.css theme.ts 2>/dev/null
 ls src/styles/ src/theme/ src/tokens/ 2>/dev/null
 
-# Existing patterns
-ls src/components/ components/ 2>/dev/null | head -20
-ls src/pages/ app/ pages/ 2>/dev/null | head -20
-
-# Auth/API patterns
-ls src/api/ src/services/ src/lib/ 2>/dev/null | head -20
-
 # Test patterns
-ls jest.config.* vitest.config.* pytest.ini .rspec Cargo.toml 2>/dev/null
+ls jest.config.* vitest.config.* pytest.ini .rspec 2>/dev/null
 ls -d test/ tests/ spec/ __tests__/ e2e/ 2>/dev/null
 
 # Git context
@@ -93,18 +99,90 @@ git log --oneline -10 2>/dev/null
 git diff --stat HEAD 2>/dev/null | tail -5
 ```
 
-Also read with Glob/Grep:
-- Existing component patterns (naming, structure, styling approach)
-- API patterns (REST/GraphQL, auth middleware)
-- Test patterns (framework, coverage, naming conventions)
-- Design tokens/theme (colors, typography, spacing)
+**If bash fails** (permissions, not a git repo, etc.): skip to Step 2.
+The scan is best-effort, not required.
 
-**Scope note:** speckit works best with web/frontend projects where visual and
-interaction attributes are relevant. For pure backend, CLI, or library projects,
-the visual and interaction attributes will be N/A — spec those as `N/A — backend only`
-rather than inventing UI that doesn't exist.
+### Step 2: Targeted code reading
 
-Store findings internally. Do not output raw scan results.
+Use Glob and Grep to extract specific patterns. Run web OR backend
+patterns based on what Phase 0 Step 1 detected.
+
+**Web/frontend projects:**
+```
+Glob("src/components/**/*.{tsx,jsx,vue,svelte}") | head -10   → component naming
+Glob("src/pages/**/*") | head -10                             → page structure
+Glob("**/*.test.*") | head -10                                → test conventions
+Grep("className=|class=", glob="*.{tsx,jsx,html}", head_limit=5) → styling approach
+Grep("fetch(|axios|useSWR|useQuery", glob="*.{ts,tsx,js}", head_limit=5) → data fetching
+Grep("color:|--.*color|bg-|text-", glob="*.{css,scss,ts}", head_limit=5) → color tokens
+```
+
+**Backend/general projects:**
+```
+Glob("**/*.{go,rs,py,rb,java}") | head -10                   → language files
+Grep("func |def |class ", glob="*.{go,py,rb}", head_limit=5) → code structure
+Grep("router|handler|endpoint|@app", glob="*.{go,py,rb,java}", head_limit=5) → API patterns
+Grep("test|spec|assert", glob="**/*test*", head_limit=5)     → test patterns
+```
+
+**If no matches:** note the absence as context. Don't invent patterns.
+
+### Step 3: Load project decisions (if exists)
+
+```bash
+cat .speckit/decisions.md 2>/dev/null || echo "NO_DECISIONS"
+```
+
+If decisions exist, they are binding precedent for this spec. Apply them.
+
+### Step 4: Produce context summary (internal, not shown to user)
+
+After all scans complete, synthesize a structured summary. This summary
+drives all decisions in Phase 2. Write it in your reasoning, not in output.
+
+```
+CONTEXT SUMMARY:
+  stack: {e.g., Next.js 14 + TypeScript + Tailwind}
+  design_system: {e.g., CSS variables in :root, Pretendard font, dark theme}
+  styling: {e.g., Tailwind utility classes / CSS modules / inline styles}
+  auth: {e.g., JWT via NextAuth / no auth detected}
+  data_fetching: {e.g., SWR / fetch / no client data fetching}
+  test_framework: {e.g., Vitest + Testing Library / none detected}
+  existing_patterns: {e.g., functional components, kebab-case files}
+  project_decisions: {e.g., "auth always JWT+httpOnly" from decisions.md}
+  scope: {web-frontend / backend / fullstack / static-html / unknown}
+```
+
+**Scope note:** For pure backend, CLI, or library projects, mark visual and
+interaction attributes as `N/A — {scope}` rather than inventing UI.
+
+---
+
+## Phase 0.5: Fast Path Check
+
+Before routing, check if this is a trivial task.
+
+**Trivial criteria (ALL must be true):**
+- The user's request explicitly describes a small, concrete change
+- No new components, pages, or endpoints implied
+- No business logic or data flow change implied
+- Examples: "버튼 색상 #333으로 바꿔줘", "typo fix in header", "change timeout to 5s"
+
+**Not trivial even if it sounds small:** "fix the login bug" (needs investigation),
+"add a button" (needs visual + interaction spec), "update the API" (needs contract spec).
+
+**If trivial:** skip Phase 1-2, output inline micro-spec:
+
+```markdown
+**Spec:** {one-line description}
+- Change: {what to modify, in which file}
+- Constraint: {any constraint, or "none beyond existing"}
+- Reason: {why this approach}
+```
+
+Then STOP. Do not generate a full spec for trivial work.
+
+**If not trivial:** continue to Phase 1.
 
 ---
 
@@ -123,22 +201,33 @@ If multiple apply, combine (e.g., "login page" = ui-component + feature).
 | `api` | API, endpoint, route, webhook, integration | functional, constraint, test-strategy |
 | `general` | (fallback) anything not matching above | functional, constraint |
 
-**Fallback:** If the request doesn't clearly match any category, use `general`.
-Analyze the request for implicit visual/interaction/test needs and add those
-attributes if detected. Never refuse to generate a spec.
+**Fallback:** If the request doesn't clearly match, use `general`.
+State your interpretation: "Interpreted '{request}' as {category} because {reason}."
+Never refuse to generate a spec.
 
 **Routing rules (apply AFTER category match, add missing attributes):**
-- If request mentions ANY visual element (page, screen, UI, button, form, modal, card, list, table, chart) → include `visual`
-- If request produces something the user SEES or CLICKS → include `visual` + `interaction`
-- If request involves user interaction (click, input, navigate, drag, scroll) → include `interaction`
+- If the result is something a user SEES → include `visual`
+- If the result is something a user INTERACTS with → include `visual` + `interaction`
 - If request touches data or logic → include `functional`
-- Always include `constraint` (performance, security, accessibility)
-- Include `test-strategy` for feature, api, and any request touching existing test infrastructure
-- Include `acceptance` when the preset specifies it for the matched category
+- Always include `constraint`
+- Include `test-strategy` when test infrastructure exists (detected in Phase 0)
+- Include `acceptance` when the preset specifies it
 
-**Example:** "북마크 기능 추가해줘" matches `feature`, but involves a button
-the user clicks (visual) and state toggling (interaction). Final attributes:
-functional + visual + interaction + constraint.
+**Ambiguous request handling:** If the request is too vague to determine scope
+(e.g., "이거 좀 고쳐줘"), make your best guess based on recent git diff and
+current codebase state. State the interpretation explicitly in the spec header.
+
+### Load preset
+
+```bash
+[ -n "$SPECKIT_DIR" ] && cat "$SPECKIT_DIR/presets/custom.json" 2>/dev/null || \
+[ -n "$SPECKIT_DIR" ] && cat "$SPECKIT_DIR/presets/default.json" 2>/dev/null || \
+echo "NO_PRESET"
+```
+
+If a preset overrides attributes for this category, use the preset's list.
+**Valid attributes:** functional, visual, interaction, constraint, test-strategy, acceptance.
+If the preset references anything else, ignore it.
 
 ---
 
@@ -146,35 +235,39 @@ functional + visual + interaction + constraint.
 
 ### Step 1: Load attribute references
 
-Read the attribute files that match the routed category using the Read tool:
+Read the attribute files for guidance on quality and structure:
 
 ```
-For each attribute in the category's attribute list:
+For each attribute in the final attribute list:
   Read "$SPECKIT_DIR/attributes/{attribute}.md"
 ```
 
-If `SPECKIT_DIR` is not found, use the inline Output Format below as the
-attribute structure. The attribute files are reference guides, not hard
-requirements. The Output Format section defines the canonical spec shape.
+If files are unavailable, use the Output Format below as the structure guide.
+The attribute files provide BAD/GOOD examples. The Output Format defines the
+canonical spec shape.
 
-### Step 2: Load preset (if exists)
+### Step 2: Fill the spec
 
-```bash
-[ -n "$SPECKIT_DIR" ] && cat "$SPECKIT_DIR/presets/custom.json" 2>/dev/null || cat "$SPECKIT_DIR/presets/default.json" 2>/dev/null
-```
+Fill using context from Phase 0's CONTEXT SUMMARY. Rules:
 
-If a preset overrides the default attribute list for this category, use
-the preset's list instead.
+1. **Every non-obvious choice gets `(reason: ...)`.**
+   Reference specific context: `(reason: existing tokens.css uses 8px grid)`,
+   not generic reasoning: `(reason: common practice)`.
 
-### Step 3: Fill the spec
+2. **Reference project decisions.** If `.speckit/decisions.md` has a relevant
+   precedent, cite it: `(reason: project decision — JWT+httpOnly, see decisions.md:5)`.
 
-Fill every field using context from Phase 0. For each decision, add a brief
-`(reason: ...)` annotation so the user knows WHY you chose that value.
+3. **When context is missing**, state the assumption:
+   `(reason: no design system detected, using system font stack as default)`.
+   Never leave a field as `{placeholder}`.
 
-**When context is missing** (empty repo, no design system, no existing patterns):
-- State the assumption explicitly: `(reason: no existing design system found, using sensible defaults)`
-- Use widely-adopted defaults (e.g., system font stack, 8px spacing grid, WCAG AA)
-- Never leave a field as `{placeholder}`. Always fill with a concrete value or write `N/A — {why}`.
+4. **Section item counts:**
+   - Business Logic: 1-3 rules (only non-obvious ones)
+   - Edge Cases: 2-5 (focus on likely scenarios, not exhaustive)
+   - Error Handling: 2-4 (user-facing errors only)
+   - Test Strategy: 3-7 test cases (cover happy + error + edge)
+   - Acceptance: 3-6 criteria (measurable, not generic)
+   Fewer is better than padding. Omit entire sections with no content.
 
 ### Output Format
 
@@ -182,7 +275,7 @@ Fill every field using context from Phase 0. For each decision, add a brief
 # Spec: {title}
 
 > Category: {categories} | Generated: {date}
-> Based on: {what context informed this spec}
+> Context: {1-line summary from CONTEXT SUMMARY, e.g., "Next.js + Tailwind, dark theme, no auth"}
 
 ## Functional Attributes
 {only if functional is included}
@@ -193,16 +286,13 @@ Fill every field using context from Phase 0. For each decision, add a brief
 - Side effects: {database writes, API calls, notifications}
 
 ### Business Logic
-- {rule 1} (reason: ...)
-- {rule 2} (reason: ...)
+- {rule} (reason: ...)
 
 ### Edge Cases
-- {edge case 1}: {expected behavior} (reason: ...)
-- {edge case 2}: {expected behavior} (reason: ...)
+- {scenario}: {expected behavior} (reason: ...)
 
 ### Error Handling
-- {error scenario 1}: {user-facing behavior} (reason: ...)
-- {error scenario 2}: {user-facing behavior} (reason: ...)
+- {error scenario}: {user-facing behavior} (reason: ...)
 
 ### Data Flow
 ```
@@ -213,191 +303,174 @@ Fill every field using context from Phase 0. For each decision, add a brief
 {only if visual is included}
 
 ### Layout
-- Structure: {layout description} (reason: ...)
+- Structure: {description} (reason: ...)
 - Responsive: {breakpoint strategy} (reason: ...)
-- Spacing: {spacing system} (reason: ...)
+- Spacing: {system} (reason: ...)
 
 ### Typography
-- Heading: {font, size, weight} (reason: ...)
-- Body: {font, size, weight} (reason: ...)
+- Heading: {font, size, weight, color} (reason: ...)
+- Body: {font, size, weight, color} (reason: ...)
 
 ### Color
-- Primary: {color} (reason: ...)
-- Background: {color} (reason: ...)
-- Accent: {color} (reason: ...)
-- Error/Success/Warning: {colors}
+- {role}: {value} (reason: ...)
 
 ### Components
-- {component 1}: {visual spec}
-- {component 2}: {visual spec}
+- {component}: {spec}
 
 ## Interaction Attributes
 {only if interaction is included}
 
-### State Transitions
-- {state A} → {trigger} → {state B} (reason: ...)
-- Loading states: {description}
-- Empty states: {description}
-- Error states: {description}
+### State Machine
+```
+{state A} --{trigger}--> {state B} --{trigger}--> {state C}
+```
+
+### States
+- Default: {description}
+- Loading: {description}
+- Empty: {description}
+- Error: {description}
 
 ### User Actions
-- {action 1}: {expected response + timing}
-- {action 2}: {expected response + timing}
+- {action}: {response + timing}
 
 ### Animation/Motion
-- {transition 1}: {duration, easing} (reason: ...)
+- {transition}: {duration, easing} (reason: ...)
+- prefers-reduced-motion: {behavior}
 
 ## Constraints
 {always included}
 
 ### Performance
-- Load time target: {value} (reason: ...)
-- Bundle size budget: {value if applicable}
+- {metric}: {target} (reason: ...)
 
 ### Security
-- {constraint 1} (reason: ...)
+- {constraint} (reason: ...)
 
 ### Accessibility
-- {a11y requirement 1} (reason: ...)
+- {requirement} (reason: ...)
 
 ### Browser/Device Support
-- {support scope} (reason: ...)
+- {scope} (reason: ...)
 
 ## Test Strategy
 {only if test-strategy is included}
 
-### Unit Tests
-- {test 1}: {what to assert}
-
-### Integration Tests
-- {test 1}: {what to assert}
-
-### E2E Tests
-- {test 1}: {user flow to verify}
+### Tests
+- {test description}: {assertion}
 
 ## Acceptance Criteria
 {only if acceptance is included}
 
 ### Done Checklist
-- [ ] {criterion 1}
-- [ ] {criterion 2}
+- [ ] {measurable criterion}
 
-### Demo Scenarios
-- {scenario}: {steps to demonstrate}
+### Demo Scenario
+- {steps to demonstrate}
 
 ---
-*Corrections needed? Tell me what to change. Otherwise, implementation begins.*
+*Corrections? Tell me what to change. Confirm to proceed with implementation.*
 ```
 
 ---
 
 ## Phase 3: Output + STOP
 
-**This skill ONLY produces specs. It does NOT implement.**
+**This skill ONLY produces specs. It does NOT implement. It does NOT write files.**
 
-1. Output the completed spec in conversation.
-2. End with: `*Corrections needed? Tell me what to change. Otherwise, implementation begins.*`
-3. **STOP.** Do not write code, create files, or start implementation.
+### Step 1: Output the spec
+
+Output the completed spec in conversation.
+
+### Step 2: Suggest decision accumulation (inline, no file write)
+
+If the spec contains project-specific reasons (not generic best practices),
+list them at the bottom of the spec output:
+
+```markdown
+---
+**Reusable decisions detected** (run `save decisions` to persist):
+- auth: JWT + httpOnly cookie
+- spacing: 8px grid from tokens.css
+```
+
+**Criteria:** project-specific = YES, generic wisdom = NO.
+- YES: "auth uses JWT + httpOnly cookie" (project-specific)
+- NO: "passwords should be hashed" (universal)
+
+The user can then say "save decisions" to persist them. This keeps
+all file writes opt-in.
+
+### Step 3: STOP
+
+**STOP.** Do not write code, create files, or start implementation.
+Do not write to `.speckit/decisions.md` unless the user explicitly asks.
 
 The user will either:
-- Correct the spec → update the changed section, re-output, STOP again.
-- Confirm or say nothing → the NEXT user message triggers implementation (outside this skill).
-- Say "let's discuss" → switch to collaborative mode.
+- **Correct** → update the changed section only, re-output, STOP again.
+- **Confirm** → implementation starts in the NEXT turn (outside this skill).
+- **"save this"** → save spec to `.specs/{kebab-case-title}.md`.
+- **"save decisions"** → append decisions to `.speckit/decisions.md`.
 
-**Spec saving is opt-in.** Only save to disk if the user explicitly asks
-("save this spec", "write it down"). When saving, use the Write tool:
+### Implementation handoff
 
-```
-File: .specs/{kebab-case-title}.md
-Content: the full spec markdown
-```
-
-Tell the user to add `.specs/` to their `.gitignore` if they don't want
-specs committed, or leave it tracked for team visibility.
+When the user confirms and implementation begins (outside this skill), the spec
+is the source of truth. The implementing agent should:
+- Satisfy every item in Functional Attributes
+- Match Visual Attributes
+- Implement all states from Interaction Attributes
+- Meet all Constraints
+- Pass all tests in Test Strategy
+- Check off every Acceptance Criteria item
 
 ---
 
 ## Collaborative Mode (opt-in only)
 
-Only activated when the user explicitly requests discussion.
-Walk through attributes one at a time, presenting your recommendation
-and asking for input. Keep it concise, one attribute per exchange.
-
----
-
-## Preset System
-
-Teams can define default attribute combinations per category in `presets/`.
-
-```json
-// presets/default.json
-{
-  "landing": ["visual", "interaction", "constraint", "acceptance"],
-  "feature": ["functional", "constraint", "test-strategy"],
-  "bugfix": ["functional", "constraint"],
-  "refactor": ["functional", "constraint"],
-  "ui-component": ["visual", "functional", "interaction", "constraint"],
-  "api": ["functional", "constraint", "test-strategy"]
-}
-```
-
-Teams can create custom presets (copy `example-team.json` to `custom.json`):
-```json
-// presets/custom.json
-{
-  "feature": ["functional", "visual", "constraint", "test-strategy", "acceptance"]
-}
-```
-
-**Valid attributes:** functional, visual, interaction, constraint, test-strategy, acceptance.
-If a preset references an unknown attribute, ignore it and warn in the spec output.
-
-Load preset at runtime:
-```bash
-SPECKIT_DIR=$(dirname "$(dirname "$(dirname "$0")")")
-PRESET_FILE="$SPECKIT_DIR/presets/default.json"
-[ -f "$SPECKIT_DIR/presets/custom.json" ] && PRESET_FILE="$SPECKIT_DIR/presets/custom.json"
-cat "$PRESET_FILE" 2>/dev/null
-```
+Only activated when the user explicitly says "let's discuss", "help me decide",
+or "같이 정하자". Walk through attributes one at a time, presenting your
+recommendation and asking for input. One attribute per exchange.
 
 ---
 
 ## Attribute Reference
 
-Each attribute block is defined in `attributes/`. The skill loads and fills
-them based on the category routing. Attributes are composable: any combination
-can be applied to any category.
-
 | Attribute | File | Purpose |
 |-----------|------|---------|
-| functional | `attributes/functional.md` | I/O, business logic, edge cases, errors |
-| visual | `attributes/visual.md` | Layout, typography, color, components |
+| functional | `attributes/functional.md` | I/O, business logic, edge cases, errors, data flow |
+| visual | `attributes/visual.md` | Layout, typography, color, components, imagery |
 | interaction | `attributes/interaction.md` | States, transitions, animations, gestures |
-| constraint | `attributes/constraint.md` | Performance, security, a11y, browser support |
-| test-strategy | `attributes/test-strategy.md` | Unit, integration, E2E test plan |
-| acceptance | `attributes/acceptance.md` | Done criteria, sign-off checklist |
+| constraint | `attributes/constraint.md` | Performance, security, a11y, browser, i18n, legal |
+| test-strategy | `attributes/test-strategy.md` | Unit, integration, E2E, visual regression |
+| acceptance | `attributes/acceptance.md` | Done criteria, demo scenarios, sign-off |
+
+**Valid attributes:** functional, visual, interaction, constraint, test-strategy, acceptance.
+These are the ONLY valid values. Presets referencing anything else are ignored.
 
 ---
 
 ## Quality Rules
 
-1. **No vague specs.** Every attribute must be specific and measurable.
-   BAD: "fast loading" → GOOD: "LCP < 2.5s on 3G"
+1. **No vague specs.** Every value must be specific and measurable.
+   BAD: "fast loading" → GOOD: "LCP < 2.5s on 4G"
    BAD: "clean design" → GOOD: "8px grid, Inter 14/20, #1a1a1a on #ffffff"
 
-2. **Reason everything.** Every non-obvious choice gets a `(reason: ...)`.
-   Obvious choices (e.g., "password field uses type=password") don't need reasons.
+2. **Reason everything non-obvious.** Cite specific context, not generic wisdom.
+   BAD: `(reason: best practice)` → GOOD: `(reason: existing :root uses --accent-blue: #3b82f6)`
 
-3. **Match existing patterns.** If the codebase uses Tailwind, spec in Tailwind
-   terms. If it uses CSS modules, spec in CSS module terms. Don't introduce
-   new conventions unless the spec explicitly calls for it.
+3. **Match existing patterns.** Spec in the project's own terms.
+   Tailwind project → spec with Tailwind classes.
+   CSS variables → spec with variable names.
+   Never introduce conventions the project doesn't use.
 
-4. **Right-size the spec.** Scale the spec to match the work:
-   - **Trivial** (typo fix, config change): 3-5 lines. Functional + constraint only.
-   - **Small** (bugfix, minor feature): 10-20 lines. Skip sections with no content.
-   - **Medium** (new component, API endpoint): full spec, all relevant sections.
-   - **Large** (new page, major feature): full spec with all attributes.
-   Omit entire sections that don't apply. Never pad with generic filler.
+4. **Right-size the spec:**
+   - **Trivial** (typo, config): 3-5 line micro-spec via fast path.
+   - **Small** (bugfix, minor tweak): 10-20 lines. 1-2 sections.
+   - **Medium** (component, endpoint): 50-100 lines. All relevant sections.
+   - **Large** (page, major feature): 100+ lines. All attributes.
 
 5. **Constraint is non-negotiable.** Every spec includes constraints.
    Performance, security, and accessibility are never optional.
+
+6. **Omit, don't pad.** If a section has nothing meaningful, omit it entirely.
+   An empty "Edge Cases" section is worse than no section.

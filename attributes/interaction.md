@@ -63,13 +63,17 @@ GOOD: "Modal enter: fade-in 200ms ease-out + scale from 0.95.
        prefers-reduced-motion: no scale/slide, opacity-only transitions."
 ```
 
-## Gestures (mobile)
+## Gestures (mobile) — include only if mobile interaction exists
 - Swipe: {direction, action}
 - Pull to refresh: {behavior}
 - Long press: {behavior}
 - Pinch/zoom: {enabled/disabled}
 
-## Real-time
+## Real-time — include only if live data exists
 - Live updates: {polling/websocket/SSE, interval}
 - Optimistic updates: {behavior on failure}
 - Conflict resolution: {last-write-wins/merge/prompt}
+
+Note: Gestures and Real-time are optional extensions. Include them under
+"User Actions" in the spec output when relevant. Do not create separate
+sections for them — fold into the main interaction spec.

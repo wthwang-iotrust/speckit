@@ -32,8 +32,9 @@ GOOD: "Scenario: Bookmark a question
        7. Verify: navigates to question 3 with bookmark icon filled"
 ```
 
-## Sign-off
+## Sign-off — omit from spec output unless team preset includes it
 Roles are optional. Include only those that apply to your team.
+In the spec output, fold sign-off items into the Done Checklist if needed.
 
 - Developer: {self-review checklist, e.g., "ran locally on mobile viewport"}
 - Designer: {visual approval criteria, e.g., "matches Figma within 2px"}

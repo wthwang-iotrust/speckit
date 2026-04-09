@@ -26,7 +26,7 @@ speckit outputs a spec:
   - Interaction: loading states, error states, success redirect
   - Constraint: LCP < 2.5s, WCAG AA, keyboard navigation
 
-Then implementation begins — with every attribute explicit.
+You review, correct if needed, then confirm to start building.
 ```
 
 ## Install
@@ -76,10 +76,10 @@ Add to your project's `CLAUDE.md`:
 
 speckit activates automatically when you request implementation work:
 
-- "Add a payment form" → routes to `ui-component + feature` → full spec → implementation
+- "Add a payment form" → routes to `ui-component + feature` → full spec → spec → you confirm → build
 - "Fix the login bug" → routes to `bugfix` → focused spec → fix
 - "Build the landing page" → routes to `landing` → visual + interaction spec → build
-- "Create a REST API for users" → routes to `api` → API spec → implementation
+- "Create a REST API for users" → routes to `api` → API spec → spec → you confirm → build
 
 No questions asked. speckit reads your codebase, makes judgment calls, and shows reasoning. You correct what's wrong. **speckit only produces specs, it does not auto-implement.**
 
