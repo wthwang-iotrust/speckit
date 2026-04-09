@@ -30,10 +30,10 @@ Grep("tailwind|styled-components|emotion|css-modules", glob="*.{js,ts,json}", he
 
 | Category | Trigger patterns | Primary attributes |
 |----------|-----------------|-------------------|
-| `ui-design` | UI 디자인, 화면 설계, 페이지 디자인 | mood, layout, typography, color, hierarchy |
-| `branding` | 브랜딩, 로고, 아이덴티티 | mood, color, typography, constraint |
-| `wireframe` | 와이어프레임, 목업, 프로토타입 | layout, hierarchy, constraint |
-| `visual-audit` | 디자인 리뷰, 시각 감사, UI 개선 | color, typography, hierarchy, constraint |
+| `ui-design` | UI 디자인, 화면 설계, 페이지 디자인, UI design, page design, screen design | mood, layout, typography, color, hierarchy |
+| `branding` | 브랜딩, 로고, 아이덴티티, branding, logo, identity, brand | mood, color, typography, constraint |
+| `wireframe` | 와이어프레임, 목업, 프로토타입, wireframe, mockup, prototype | layout, hierarchy, constraint |
+| `visual-audit` | 디자인 리뷰, 시각 감사, UI 개선, design review, visual audit, UI polish | color, typography, hierarchy, constraint |
 | `general` | (fallback) | mood, layout, color, constraint |
 
 **Multi-match rule:** multiple categories → union of attributes.
@@ -65,6 +65,55 @@ Grep("tailwind|styled-components|emotion|css-modules", glob="*.{js,ts,json}", he
 - Color: palette 3-7 colors, semantic 4-6, contrast ratios, mode strategy
 - Hierarchy: primary + secondary + CTA + visual flow
 - Constraint: accessibility + brand + technical + performance (1-2 lines each)
+
+## Output Template
+
+```markdown
+# Design Spec: {title}
+
+> Domain: design | Category: {categories} | Generated: {date}
+> Context: {design system summary, e.g., "CSS variables dark theme, Pretendard font"}
+
+## Mood & Direction
+- Tone: {3-5 adjectives} (reason: ...)
+- Reference direction: {1-2 references} (reason: ...)
+- Anti-pattern: {what to avoid} (reason: ...)
+
+## Layout
+- Grid: {system} (reason: ...)
+- Spacing: {scale} (reason: ...)
+- Responsive: {strategy} (reason: ...)
+- Composition: {structure} (reason: ...)
+
+## Typography
+- Scale: {ratio and sizes} (reason: ...)
+- Primary: {body typeface + specs} (reason: ...)
+- Display: {heading typeface + specs} (reason: ...)
+- Hierarchy: {how levels are distinguished} (reason: ...)
+
+## Color
+- Palette: {colors with roles} (reason: ...)
+- Semantic: {meaning-based assignments} (reason: ...)
+- Contrast: {ratios for key combinations} (reason: ...)
+- Dark/Light: {mode strategy} (reason: ...)
+
+## Information Hierarchy
+- Primary: {most important element} (reason: ...)
+- Secondary: {supporting elements} (reason: ...)
+- CTA: {call to action} (reason: ...)
+- Visual flow: {eye movement path} (reason: ...)
+
+## Constraints
+### Accessibility
+- {WCAG level, contrast, touch targets} (reason: ...)
+### Brand
+- {brand rules or "no brand constraints"} (reason: ...)
+### Technical
+- {technical limits affecting design} (reason: ...)
+
+---
+*Corrections? Tell me what to change. Confirm to proceed.*
+```
 
 ## Scope Note
 
