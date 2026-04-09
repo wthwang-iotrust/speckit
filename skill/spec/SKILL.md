@@ -1,6 +1,6 @@
 ---
 name: spec
-version: 0.1.0
+version: 0.2.0
 description: |
   AI-driven spec generator. Analyzes user request + codebase context to produce
   structured specifications before implementation. Replaces vague "do it well"
@@ -65,9 +65,13 @@ cat README.md 2>/dev/null | head -50
 cat package.json 2>/dev/null | head -30
 cat CLAUDE.md 2>/dev/null | head -50
 
-# Tech stack detection
+# Tech stack detection — web
 ls tsconfig.json next.config.* vite.config.* nuxt.config.* tailwind.config.* 2>/dev/null
 ls src/ app/ pages/ components/ lib/ utils/ styles/ 2>/dev/null | head -30
+
+# Tech stack detection — backend/general
+ls go.mod Cargo.toml pyproject.toml requirements.txt Gemfile build.gradle pom.xml Makefile 2>/dev/null
+ls cmd/ internal/ pkg/ src/main/ app/controllers/ 2>/dev/null | head -20
 
 # Design system detection
 ls DESIGN.md design-system.md tokens.css theme.ts 2>/dev/null
@@ -80,6 +84,10 @@ ls src/pages/ app/ pages/ 2>/dev/null | head -20
 # Auth/API patterns
 ls src/api/ src/services/ src/lib/ 2>/dev/null | head -20
 
+# Test patterns
+ls jest.config.* vitest.config.* pytest.ini .rspec Cargo.toml 2>/dev/null
+ls -d test/ tests/ spec/ __tests__/ e2e/ 2>/dev/null
+
 # Git context
 git log --oneline -10 2>/dev/null
 git diff --stat HEAD 2>/dev/null | tail -5
@@ -88,8 +96,13 @@ git diff --stat HEAD 2>/dev/null | tail -5
 Also read with Glob/Grep:
 - Existing component patterns (naming, structure, styling approach)
 - API patterns (REST/GraphQL, auth middleware)
-- Test patterns (framework, coverage)
+- Test patterns (framework, coverage, naming conventions)
 - Design tokens/theme (colors, typography, spacing)
+
+**Scope note:** speckit works best with web/frontend projects where visual and
+interaction attributes are relevant. For pure backend, CLI, or library projects,
+the visual and interaction attributes will be N/A — spec those as `N/A — backend only`
+rather than inventing UI that doesn't exist.
 
 Store findings internally. Do not output raw scan results.
 
@@ -114,12 +127,18 @@ If multiple apply, combine (e.g., "login page" = ui-component + feature).
 Analyze the request for implicit visual/interaction/test needs and add those
 attributes if detected. Never refuse to generate a spec.
 
-**Routing rules:**
-- If request mentions visual elements (page, screen, UI) → include `visual`
-- If request involves user interaction (click, input, navigate) → include `interaction`
+**Routing rules (apply AFTER category match, add missing attributes):**
+- If request mentions ANY visual element (page, screen, UI, button, form, modal, card, list, table, chart) → include `visual`
+- If request produces something the user SEES or CLICKS → include `visual` + `interaction`
+- If request involves user interaction (click, input, navigate, drag, scroll) → include `interaction`
 - If request touches data or logic → include `functional`
 - Always include `constraint` (performance, security, accessibility)
-- Include `test-strategy` for feature and api categories
+- Include `test-strategy` for feature, api, and any request touching existing test infrastructure
+- Include `acceptance` when the preset specifies it for the matched category
+
+**Example:** "북마크 기능 추가해줘" matches `feature`, but involves a button
+the user clicks (visual) and state toggling (interaction). Final attributes:
+functional + visual + interaction + constraint.
 
 ---
 
@@ -184,6 +203,11 @@ Fill every field using context from Phase 0. For each decision, add a brief
 ### Error Handling
 - {error scenario 1}: {user-facing behavior} (reason: ...)
 - {error scenario 2}: {user-facing behavior} (reason: ...)
+
+### Data Flow
+```
+{input} → {validation} → {processing} → {storage} → {output}
+```
 
 ## Visual Attributes
 {only if visual is included}
@@ -251,32 +275,45 @@ Fill every field using context from Phase 0. For each decision, add a brief
 ### E2E Tests
 - {test 1}: {user flow to verify}
 
+## Acceptance Criteria
+{only if acceptance is included}
+
+### Done Checklist
+- [ ] {criterion 1}
+- [ ] {criterion 2}
+
+### Demo Scenarios
+- {scenario}: {steps to demonstrate}
+
 ---
 *Corrections needed? Tell me what to change. Otherwise, implementation begins.*
 ```
 
 ---
 
-## Phase 3: Output + Proceed
+## Phase 3: Output + STOP
 
-1. Output the completed spec in conversation
-2. Save a copy to the project:
+**This skill ONLY produces specs. It does NOT implement.**
 
-```bash
-SPEC_DIR=".specs"
-mkdir -p "$SPEC_DIR"
-FILENAME=$(echo "{title}" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd '[:alnum:]-')
-echo "Spec saved to $SPEC_DIR/$FILENAME.md"
+1. Output the completed spec in conversation.
+2. End with: `*Corrections needed? Tell me what to change. Otherwise, implementation begins.*`
+3. **STOP.** Do not write code, create files, or start implementation.
+
+The user will either:
+- Correct the spec → update the changed section, re-output, STOP again.
+- Confirm or say nothing → the NEXT user message triggers implementation (outside this skill).
+- Say "let's discuss" → switch to collaborative mode.
+
+**Spec saving is opt-in.** Only save to disk if the user explicitly asks
+("save this spec", "write it down"). When saving, use the Write tool:
+
+```
+File: .specs/{kebab-case-title}.md
+Content: the full spec markdown
 ```
 
-3. Wait briefly for corrections. If the user says nothing or confirms,
-   proceed to implementation using the spec as the source of truth.
-
-**If the user corrects something:** Update the spec, re-output the changed
-section only, and proceed.
-
-**If the user says "let's discuss":** Switch to collaborative mode.
-Ask about the specific attributes they want to discuss, one at a time.
+Tell the user to add `.specs/` to their `.gitignore` if they don't want
+specs committed, or leave it tracked for team visibility.
 
 ---
 
@@ -304,14 +341,16 @@ Teams can define default attribute combinations per category in `presets/`.
 }
 ```
 
-Teams can create custom presets:
+Teams can create custom presets (copy `example-team.json` to `custom.json`):
 ```json
-// presets/my-team.json
+// presets/custom.json
 {
-  "landing": ["visual", "interaction", "constraint", "acceptance", "seo"],
-  "feature": ["functional", "constraint", "test-strategy", "monitoring"]
+  "feature": ["functional", "visual", "constraint", "test-strategy", "acceptance"]
 }
 ```
+
+**Valid attributes:** functional, visual, interaction, constraint, test-strategy, acceptance.
+If a preset references an unknown attribute, ignore it and warn in the spec output.
 
 Load preset at runtime:
 ```bash
@@ -353,8 +392,12 @@ can be applied to any category.
    terms. If it uses CSS modules, spec in CSS module terms. Don't introduce
    new conventions unless the spec explicitly calls for it.
 
-4. **Right-size the spec.** A one-liner bugfix gets a 5-line spec. A full
-   landing page gets a full spec. Don't over-spec trivial work.
+4. **Right-size the spec.** Scale the spec to match the work:
+   - **Trivial** (typo fix, config change): 3-5 lines. Functional + constraint only.
+   - **Small** (bugfix, minor feature): 10-20 lines. Skip sections with no content.
+   - **Medium** (new component, API endpoint): full spec, all relevant sections.
+   - **Large** (new page, major feature): full spec with all attributes.
+   Omit entire sections that don't apply. Never pad with generic filler.
 
 5. **Constraint is non-negotiable.** Every spec includes constraints.
    Performance, security, and accessibility are never optional.
