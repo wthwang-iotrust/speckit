@@ -1,0 +1,9 @@
+{
+  "landing": ["visual", "interaction", "constraint", "acceptance"],
+  "feature": ["functional", "constraint", "test-strategy"],
+  "bugfix": ["functional", "constraint"],
+  "refactor": ["functional", "constraint"],
+  "ui-component": ["visual", "functional", "interaction", "constraint"],
+  "api": ["functional", "constraint", "test-strategy"],
+  "general": ["functional", "constraint"]
+}

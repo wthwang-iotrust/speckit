@@ -1,4 +1,5 @@
 node_modules/
 .DS_Store
 presets/custom.json
+domains/*/presets/custom.json
 .specs/

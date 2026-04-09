@@ -125,20 +125,27 @@ cp presets/example-team.json presets/custom.json
 
 ```
 speckit/
-├── SKILL.md               # Main skill (router + spec generator)
-├── attributes/            # Composable attribute blocks with BAD/GOOD examples
-│   ├── functional.md
-│   ├── visual.md
-│   ├── interaction.md
-│   ├── constraint.md
-│   ├── test-strategy.md
-│   └── acceptance.md
-├── presets/                # Category → attribute mappings
-│   ├── default.json
-│   └── example-team.json
+├── SKILL.md                       # Router + common phases
+├── domains/
+│   └── dev/                       # Development domain
+│       ├── instructions.md        # Dev-specific routing + scan logic
+│       ├── attributes/            # Composable attribute blocks (BAD/GOOD examples)
+│       │   ├── functional.md
+│       │   ├── visual.md
+│       │   ├── interaction.md
+│       │   ├── constraint.md
+│       │   ├── test-strategy.md
+│       │   └── acceptance.md
+│       └── presets/
+│           ├── default.json
+│           └── example-team.json
+├── attributes/                    # Legacy (v0.3.x compat, same content as domains/dev/)
+├── presets/                       # Global presets (fallback)
 ├── VERSION
 └── LICENSE
 ```
+
+**v0.3.x users:** `git pull` works seamlessly. SKILL.md detects legacy structure and falls back to root `attributes/`.
 
 ## Scope
 
