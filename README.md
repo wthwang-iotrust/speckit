@@ -31,13 +31,17 @@ Then implementation begins — with every attribute explicit.
 
 ## Install
 
-### One-liner
+### One-liner (global)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/wthwang-iotrust/speckit/main/install.sh | bash
 ```
 
-This clones speckit to `~/.claude/skills/speckit`. Re-run the same command to update.
+### One-liner (project-local)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wthwang-iotrust/speckit/main/install.sh | bash -s -- --local
+```
 
 ### Manual install
 
@@ -52,10 +56,11 @@ git clone --depth 1 https://github.com/wthwang-iotrust/speckit.git .claude/skill
 ### Update
 
 ```bash
+# Re-run the install command, or:
 cd ~/.claude/skills/speckit && git pull
 ```
 
-Your `presets/custom.json` is gitignored and preserved across updates.
+`presets/custom.json` is gitignored and preserved across updates.
 
 ### Activate
 
@@ -76,7 +81,7 @@ speckit activates automatically when you request implementation work:
 - "Build the landing page" → routes to `landing` → visual + interaction spec → build
 - "Create a REST API for users" → routes to `api` → API spec → implementation
 
-No questions asked. speckit reads your codebase, makes judgment calls, and shows reasoning. You correct what's wrong.
+No questions asked. speckit reads your codebase, makes judgment calls, and shows reasoning. You correct what's wrong. **speckit only produces specs, it does not auto-implement.**
 
 ## Spec Attributes
 
@@ -134,6 +139,12 @@ speckit/
 ├── VERSION
 └── LICENSE
 ```
+
+## Scope
+
+speckit works best with **web and frontend projects** where visual, interaction, and constraint attributes are all relevant. For backend-only, CLI, or library projects, visual and interaction attributes will be marked N/A automatically.
+
+Supported stacks: any (detected via config files). Best experience with JavaScript/TypeScript web apps.
 
 ## Philosophy
 
