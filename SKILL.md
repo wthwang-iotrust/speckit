@@ -127,10 +127,13 @@ Extensions section. This adds domain-specific Glob/Grep patterns to the scan.
 ```
 Quick domain detection (keyword only, not full routing):
   Request contains code/build/fix/API keywords → domain = dev
-  Request contains design/UI design/mockup keywords → domain = design (→ fallback to dev)
+  Request contains design/UI design/mockup keywords → domain = dev (design not yet available)
+  Request contains strategy/marketing keywords → domain = dev (strategy not yet available)
   Otherwise → domain = dev
 
-Read "$SPECKIT_DIR/domains/{domain}/instructions.md" → run "Context Scan Extensions"
+All paths resolve to "dev" in v0.4.0. This changes when new domains ship.
+
+Read "$SPECKIT_DIR/domains/dev/instructions.md" → run "Context Scan Extensions"
 ```
 
 If instructions.md is unavailable, skip. The common scan from Step 1 is sufficient.
