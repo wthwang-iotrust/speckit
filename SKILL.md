@@ -237,8 +237,15 @@ cat "$SPECKIT_DIR/presets/default.json" 2>/dev/null || \
 echo "NO_PRESET"
 ```
 
-**Cascade priority:** domain custom.json > global custom.json > domain default.json > global default.json.
-This means a v0.3.x user's `presets/custom.json` still works after upgrading to v0.4.0.
+**Cascade priority:** domain custom > global custom > domain default > global default.
+
+**Important:** Global presets (root `presets/`) use dev-domain categories. If the
+current domain is `design`, and the global custom preset has no design categories
+(e.g., only `feature`, `bugfix`), fall through to the domain default instead of
+using irrelevant dev categories.
+
+**Rule:** When loading a preset, check if it contains categories valid for the
+current domain. If not, skip it and try the next in the cascade.
 
 **Valid attributes per domain:**
 - **dev:** functional, visual, interaction, constraint, test-strategy, acceptance

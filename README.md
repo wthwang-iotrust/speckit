@@ -94,21 +94,40 @@ No questions asked. speckit reads your codebase, makes judgment calls, and shows
 | **test-strategy** | Unit, integration, E2E test plan | `validateEmail('') → { valid: false }` |
 | **acceptance** | Done criteria, sign-off checklist | `all edge cases handled, a11y audit passed` |
 
-Each attribute file in `attributes/` includes BAD/GOOD examples to enforce specificity.
+Each attribute file includes BAD/GOOD examples to enforce specificity.
 
-## Categories
+## Domains
+
+speckit routes requests to the right domain automatically.
+
+| Domain | When | Attributes |
+|--------|------|-----------|
+| **dev** | Code implementation, features, bugs, APIs | functional, visual, interaction, constraint, test-strategy, acceptance |
+| **design** | UI design, branding, wireframes, visual audits | mood, layout, typography, color, hierarchy, constraint |
+| strategy | Marketing, planning, campaigns | coming soon |
+| process | Process improvement, workflows | coming soon |
+
+### Dev Categories
 
 | Category | When | Default attributes |
 |----------|------|--------------------|
-| `landing` | Marketing pages, hero sections | visual, interaction, constraint |
+| `landing` | Marketing pages | visual, interaction, constraint |
 | `feature` | New functionality | functional, constraint, test-strategy |
-| `bugfix` | Bug fixes, regressions | functional, constraint |
+| `bugfix` | Bug fixes | functional, constraint |
 | `refactor` | Code reorganization | functional, constraint |
 | `ui-component` | Pages, modals, forms | visual, functional, interaction, constraint |
 | `api` | Endpoints, webhooks | functional, constraint, test-strategy |
-| `general` | Anything else (fallback) | functional, constraint |
 
-speckit auto-detects the category. Multiple categories can combine (e.g., "login page" = `ui-component` + `feature`).
+### Design Categories
+
+| Category | When | Default attributes |
+|----------|------|--------------------|
+| `ui-design` | Screen/page design | mood, layout, typography, color, hierarchy |
+| `branding` | Logo, identity | mood, color, typography, constraint |
+| `wireframe` | Mockups, prototypes | layout, hierarchy, constraint |
+| `visual-audit` | Design review, polish | color, typography, hierarchy, constraint |
+
+speckit auto-detects domain and category. Multiple categories combine (union of attributes).
 
 ## Team Presets
 
@@ -127,25 +146,21 @@ cp presets/example-team.json presets/custom.json
 speckit/
 ├── SKILL.md                       # Router + common phases
 ├── domains/
-│   └── dev/                       # Development domain
-│       ├── instructions.md        # Dev-specific routing + scan logic
-│       ├── attributes/            # Composable attribute blocks (BAD/GOOD examples)
-│       │   ├── functional.md
-│       │   ├── visual.md
-│       │   ├── interaction.md
-│       │   ├── constraint.md
-│       │   ├── test-strategy.md
-│       │   └── acceptance.md
+│   ├── dev/                       # Development domain
+│   │   ├── instructions.md
+│   │   ├── attributes/ (6 files)
+│   │   └── presets/
+│   └── design/                    # Design domain (v0.5.0)
+│       ├── instructions.md
+│       ├── attributes/ (6 files)
 │       └── presets/
-│           ├── default.json
-│           └── example-team.json
-├── attributes/                    # Legacy (v0.3.x compat, same content as domains/dev/)
+├── attributes/                    # Legacy (v0.3.x compat)
 ├── presets/                       # Global presets (fallback)
 ├── VERSION
 └── LICENSE
 ```
 
-**v0.3.x users:** `git pull` works seamlessly. SKILL.md detects legacy structure and falls back to root `attributes/`.
+**v0.3.x users:** `git pull` works seamlessly. Legacy `attributes/` auto-detected.
 
 ## Scope
 
