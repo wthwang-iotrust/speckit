@@ -1,6 +1,6 @@
 ---
 name: speckit
-version: 0.4.0
+version: 0.5.0
 description: |
   AI-driven spec generator. Analyzes user request + codebase context to produce
   structured specifications before implementation. Replaces vague "do it well"
@@ -126,14 +126,12 @@ Extensions section. This adds domain-specific Glob/Grep patterns to the scan.
 
 ```
 Quick domain detection (keyword only, not full routing):
-  Request contains code/build/fix/API keywords → domain = dev
-  Request contains design/UI design/mockup keywords → domain = dev (design not yet available)
+  Request contains code/build/fix/API/feature keywords → domain = dev
+  Request contains 디자인/design/UI 설계/목업/wireframe/브랜딩/컬러/타이포 keywords → domain = design
   Request contains strategy/marketing keywords → domain = dev (strategy not yet available)
   Otherwise → domain = dev
 
-All paths resolve to "dev" in v0.4.0. This changes when new domains ship.
-
-Read "$SPECKIT_DIR/domains/dev/instructions.md" → run "Context Scan Extensions"
+Read "$SPECKIT_DIR/domains/{domain}/instructions.md" → run "Context Scan Extensions"
 ```
 
 If instructions.md is unavailable, skip. The common scan from Step 1 is sufficient.
@@ -184,7 +182,7 @@ CONTEXT SUMMARY:
 | Domain | Trigger patterns | Status |
 |--------|-----------------|--------|
 | `dev` | 만들어줘, implement, build, fix, refactor, API, feature, 코드 | available |
-| `design` | 디자인, UI 설계, 목업, 와이어프레임, 브랜딩 | coming soon |
+| `design` | 디자인, UI 설계, 목업, 와이어프레임, 브랜딩, 컬러, 타이포 | available |
 | `strategy` | 전략, 마케팅, 기획, 캠페인, GTM | coming soon |
 | `process` | 프로세스, 개선, 온보딩, 워크플로우 | coming soon |
 
@@ -242,8 +240,11 @@ echo "NO_PRESET"
 **Cascade priority:** domain custom.json > global custom.json > domain default.json > global default.json.
 This means a v0.3.x user's `presets/custom.json` still works after upgrading to v0.4.0.
 
-**Valid attributes (dev domain):** functional, visual, interaction, constraint, test-strategy, acceptance.
-If the preset references anything else, ignore it.
+**Valid attributes per domain:**
+- **dev:** functional, visual, interaction, constraint, test-strategy, acceptance
+- **design:** mood, layout, typography, color, hierarchy, constraint
+
+If the preset references anything outside the domain's valid list, ignore it.
 
 ---
 
@@ -276,6 +277,11 @@ Fill using context from Phase 0's CONTEXT SUMMARY. Rules:
 4. **Follow domain instructions** for section item counts and scope notes.
 
 ### Output Format
+
+**The output format depends on the domain.** The dev domain format is below.
+For the design domain, the output uses design-specific sections (Mood, Layout,
+Typography, Color, Hierarchy, Constraints). Refer to `domains/design/instructions.md`
+for the design output template. The header is the same for all domains:
 
 ```markdown
 # Spec: {title}
