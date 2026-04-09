@@ -1,0 +1,11 @@
+{
+  "_description": "Example team preset. Copy to custom.json and edit for your team.",
+  "_valid_attributes": ["functional", "visual", "interaction", "constraint", "test-strategy", "acceptance"],
+  "landing": ["visual", "interaction", "constraint", "acceptance"],
+  "feature": ["functional", "visual", "constraint", "test-strategy", "acceptance"],
+  "bugfix": ["functional", "constraint", "test-strategy"],
+  "refactor": ["functional", "constraint", "acceptance"],
+  "ui-component": ["visual", "functional", "interaction", "constraint", "acceptance"],
+  "api": ["functional", "constraint", "test-strategy", "acceptance"],
+  "general": ["functional", "constraint"]
+}

@@ -38,6 +38,14 @@ fi
 if [ -d "$INSTALL_DIR/.git" ]; then
   echo "Updating existing installation..."
   cd "$INSTALL_DIR"
+
+  # Migration: v0.3.x → v0.4.0 (flat attributes → domains/)
+  if [ -d "attributes" ] && [ ! -d "domains" ]; then
+    echo ""
+    echo "Migrating v0.3.x → v0.4.0 structure..."
+    echo "(Your presets/custom.json is preserved)"
+  fi
+
   git pull --ff-only 2>/dev/null || {
     echo "WARNING: git pull failed (local changes?)."
     echo "Fix manually:"
@@ -64,7 +72,7 @@ echo ""
 echo "Next: add this to your project's CLAUDE.md:"
 echo ""
 echo "  ## Skill routing"
-echo "  - Any implementation request → invoke spec"
+echo "  - Any implementation request → invoke speckit"
 echo ""
 echo "Update:  cd $INSTALL_DIR && git pull"
 echo "Install: curl -fsSL https://raw.githubusercontent.com/wthwang-iotrust/speckit/main/install.sh | bash"
