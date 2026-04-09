@@ -1,0 +1,7 @@
+{
+  "ui-design": ["mood", "layout", "typography", "color", "hierarchy"],
+  "branding": ["mood", "color", "typography", "constraint"],
+  "wireframe": ["layout", "hierarchy", "constraint"],
+  "visual-audit": ["color", "typography", "hierarchy", "constraint"],
+  "general": ["mood", "layout", "color", "constraint"]
+}
