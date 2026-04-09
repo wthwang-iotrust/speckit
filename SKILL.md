@@ -182,7 +182,7 @@ CONTEXT SUMMARY:
 | Domain | Trigger patterns | Status |
 |--------|-----------------|--------|
 | `dev` | 만들어줘, implement, build, fix, refactor, API, feature, 코드 | available |
-| `design` | 디자인, UI 설계, 목업, 와이어프레임, 브랜딩, 컬러, 타이포 | available |
+| `design` | 디자인, design, UI 설계, 목업, mockup, 와이어프레임, wireframe, 브랜딩, branding, 컬러, color, 타이포, typography | available |
 | `strategy` | 전략, 마케팅, 기획, 캠페인, GTM | coming soon |
 | `process` | 프로세스, 개선, 온보딩, 워크플로우 | coming soon |
 
