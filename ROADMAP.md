@@ -9,16 +9,17 @@ speckit은 AI를 "해결사"로 만드는 도구다.
 디자인, 전략, 프로세스, 어떤 도메인이든 "알아서 잘"이 필요한 곳에 기준을 세운다.
 
 ```
-v0.3.x (현재)     v0.4.0              v1.0
-─────────────     ──────              ────
-개발 spec 생성기   팀 협업 + 학습     도메인 확장 — 해결사 완성
-"기준을 만든다"   "기준이 누적된다"   "어떤 요청이든 기준으로 전환한다"
+v0.3.x (현재)     v0.4.0              v0.5.0            v1.0
+─────────────     ──────              ──────            ────
+단일 dev 도메인    구조 리팩토링       design 도메인      strategy + process
+flat attributes   domains/ 구조       두 번째 도메인      해결사 완성
+                  팀 decisions        크로스도메인 검증
 ```
 
 ```
                     speckit v1.0
                     ┌─────────┐
-                    │  Router  │ ← "이 화면 디자인해줘" / "마케팅 전략 세워줘" / "API 만들어줘"
+                    │  Router  │ ← "디자인해줘" / "전략 세워줘" / "API 만들어줘"
                     └────┬────┘
            ┌─────────────┼─────────────┐
            ▼             ▼             ▼
@@ -37,132 +38,136 @@ v0.3.x (현재)     v0.4.0              v1.0
 
 ---
 
+## Architecture Decisions (eng review 기반)
+
+### AD-1: SKILL.md는 라우터만, 도메인 로직은 분리
+
+SKILL.md가 모든 도메인의 Phase 지시를 담으면 500줄+ → 컨텍스트 낭비.
+SKILL.md는 라우터 + 공통 Phase만, 도메인별 차이는 `domains/{domain}/instructions.md`에서 Read로 로드.
+
+### AD-2: 도메인별 속성 경로 통일
+
+`$SPECKIT_DIR/domains/$DOMAIN/attributes/{attribute}.md` 패턴.
+도메인 간 같은 이름(constraint.md)이 있어도 경로로 구분.
+
+### AD-3: 기존 사용자 마이그레이션
+
+v0.4.0에서 `attributes/` → `domains/dev/attributes/` 이동.
+SKILL.md에 fallback: 루트 `attributes/`가 있으면 레거시로 감지, 경고 + 정상 동작.
+install.sh에 마이그레이션 로직 추가.
+
+### AD-4: 점진 확장 (incremental delivery)
+
+한 번에 4개 도메인이 아니라, 도메인 하나씩 추가하며 실사용 검증.
+"boring by default" — 검증 안 된 도메인을 동시에 출시하지 않는다.
+
+---
+
 ## v0.3.0 — 해결사 기반 확립 (완료)
 
-### 달성 결과
-
-- SKILL.md 프롬프트 품질: 5.2/10 → **9/10** (Codex 독립 검증)
-- 결정적 상태 머신: route → context → spec → STOP
-- fast path: trivial 작업 3줄 micro-spec
-- decision 누적 구조 (opt-in)
-- spec → implement 핸드오프 가이드
-- 백엔드 프로젝트 지원
+- SKILL.md 프롬프트 품질: 5.2/10 → **9/10** (Codex 독립 검증 2회)
+- 결정적 상태 머신, fast path, decision 누적, 백엔드 지원
 
 ### v0.3.1 (현재)
 
-- SKILL.md 레포 루트로 이동 (Claude Code 스킬 디스커버리 수정)
+- SKILL.md 레포 루트로 이동 (Claude Code 디스커버리 수정)
 
 ---
 
-## v0.4.0 — 팀 협업 + 학습
+## v0.4.0 — 구조 리팩토링 + 팀 기반
 
 ### 목표
 
-1. 팀 전체가 같은 기준으로 일한다
-2. 반복되는 판단이 자동으로 축적된다
-3. 실사용 피드백 기반으로 속성 품질을 올린다
+1. `domains/` 구조로 전환 (dev 도메인만, 기능 변화 없음)
+2. 팀 decisions 공유 기반 확립
+3. 기존 사용자 마이그레이션 경로 제공
 
-### 기능
+### 작업
 
 | # | 항목 | 설명 |
 |---|------|------|
-| F1 | 팀 decisions 공유 | `.speckit/decisions.md`를 git으로 공유. 팀 전체 판단 기준 통일. 새 멤버도 "우리 팀은 인증을 이렇게 한다"를 자동으로 알게 됨. |
-| F2 | spec 품질 자동 채점 | 생성된 spec의 구체성을 자동 평가. vague 필드 감지 ("fast" → 경고, "LCP < 2.5s" → 통과). 팀 전체 spec 품질 바닥선 유지. |
-| F3 | 다른 스킬과 연동 | gstack `/plan-eng-review`가 spec을 입력으로 받아 리뷰. spec이 구현의 입력이자 리뷰의 기준이 되는 파이프라인. |
-| F4 | spec 히스토리 | 같은 기능의 spec 변경 이력 추적. "2달 전 로그인 spec은 이랬는데 지금은 이렇다". |
+| R1 | 디렉토리 구조 전환 | `attributes/` → `domains/dev/attributes/`, `presets/` → `domains/dev/presets/` |
+| R2 | SKILL.md 라우터 분리 | 공통 Phase(0, 0.5, 3) + 도메인 라우터. dev 도메인 로직은 `domains/dev/instructions.md`로 이동 |
+| R3 | 레거시 fallback | 루트 `attributes/` 감지 시 경고 + 정상 동작 |
+| R4 | install.sh 마이그레이션 | 기존 설치 감지 → 구조 자동 이동 |
+| F1 | 팀 decisions 공유 | `.speckit/decisions.md`를 git 추적 권장. README에 팀 사용 가이드 추가 |
+| F2 | spec 품질 자동 채점 | 생성된 spec의 vague 필드 감지, 경고 표시 |
 
-### 검증 계획
+### 검증
 
-- 팀 내 2명 이상이 같은 프로젝트에서 speckit 사용 → decisions 충돌 없이 누적되는지
-- spec 품질 채점이 실제 구현 품질과 상관관계 있는지
-- 기존 gstack 워크플로우에 자연스럽게 끼워지는지
+- `git pull` 후 기존 `/speckit` 호출이 동일하게 동작하는지
+- `domains/dev/` 경로에서 attribute 로딩이 정상인지
+- 레거시 `attributes/` 경로에서도 fallback 동작하는지
 
 ---
 
-## v1.0 — 도메인 확장, 해결사 완성
+## v0.5.0 — design 도메인 추가
 
-### 핵심 전환
+### 목표
 
-speckit이 "개발 명세 도구"에서 **"모든 도메인의 기준 생성기"**로 확장된다.
-"알아서 잘 해줘"가 통하는 모든 영역에서, "이 기준대로 해줘"를 자동 생성한다.
+1. 두 번째 도메인(design) 추가로 멀티 도메인 구조 검증
+2. 디자인 요청에 대한 spec 품질 실사용 테스트
+3. 도메인 간 라우팅 정확도 확인
 
-### 도메인 팩 구조
+### 작업
+
+| # | 항목 | 설명 |
+|---|------|------|
+| D1 | design attribute 작성 | mood.md, layout.md, typography.md, color.md, hierarchy.md, constraint.md (각각 BAD/GOOD 예시 포함) |
+| D2 | design instructions.md | 디자인 도메인 전용 Phase 지시 (컨텍스트 스캔: DESIGN.md, Figma 링크, 브랜드 가이드라인 등) |
+| D3 | design presets | 기본 카테고리: ui-design, branding, wireframe, visual-audit |
+| D4 | 라우터 업데이트 | "디자인", "UI", "목업", "와이어프레임" → design 도메인 |
+| D5 | 크로스 도메인 테스트 | "로그인 페이지 디자인해줘" → design? dev? 둘 다? |
+
+### design 도메인 속성 구조
 
 ```
-speckit/
-├── SKILL.md                    # 도메인 감지 + 라우팅
-├── domains/
-│   ├── dev/                    # 개발 (현재 speckit의 모든 것)
-│   │   ├── attributes/
-│   │   │   ├── functional.md
-│   │   │   ├── visual.md
-│   │   │   ├── interaction.md
-│   │   │   ├── constraint.md
-│   │   │   ├── test-strategy.md
-│   │   │   └── acceptance.md
-│   │   └── presets/
-│   │
-│   ├── design/                 # 디자인
-│   │   ├── attributes/
-│   │   │   ├── mood.md         # 무드보드, 톤앤매너, 레퍼런스
-│   │   │   ├── layout.md       # 구도, 그리드, 여백, 비율
-│   │   │   ├── typography.md   # 서체, 크기 체계, 행간
-│   │   │   ├── color.md        # 팔레트, 대비, 의미 체계
-│   │   │   ├── hierarchy.md    # 정보 우선순위, 시선 흐름
-│   │   │   └── constraint.md   # 브랜드 가이드라인, 접근성, 매체 제약
-│   │   └── presets/
-│   │
-│   ├── strategy/               # 전략/기획
-│   │   ├── attributes/
-│   │   │   ├── target.md       # 타겟/페르소나, 세그먼트
-│   │   │   ├── channel.md      # 채널, 수단, 터치포인트
-│   │   │   ├── message.md      # 핵심 메시지, 톤, 차별화 포인트
-│   │   │   ├── metric.md       # KPI, 측정 방법, 목표치
-│   │   │   ├── timeline.md     # 일정, 마일스톤, 의존성
-│   │   │   └── constraint.md   # 예산, 리소스, 법적 제약
-│   │   └── presets/
-│   │
-│   └── process/                # 프로세스/운영
-│       ├── attributes/
-│       │   ├── as-is.md        # 현재 상태, 문제점, 측정값
-│       │   ├── to-be.md        # 목표 상태, 개선 방향
-│       │   ├── steps.md        # 단계별 절차, 담당, 도구
-│       │   ├── metric.md       # 측정 지표, 모니터링
-│       │   └── constraint.md   # 제약조건, 변경 관리
-│       └── presets/
-│
-├── presets/                    # 글로벌 프리셋 (도메인 간 공유)
-└── .speckit/decisions.md       # 프로젝트 판단 누적 (도메인 공통)
+domains/design/
+├── instructions.md
+├── attributes/
+│   ├── mood.md         # 무드보드, 톤앤매너, 레퍼런스 이미지
+│   ├── layout.md       # 구도, 그리드, 여백, 비율, 반응형
+│   ├── typography.md   # 서체 선택, 크기 체계, 행간, 가독성
+│   ├── color.md        # 팔레트, 대비, 의미 체계, 다크모드
+│   ├── hierarchy.md    # 정보 우선순위, 시선 흐름, CTA 배치
+│   └── constraint.md   # 브랜드 가이드라인, 접근성, 매체 제약
+└── presets/
+    └── default.json
 ```
 
-### 도메인 라우팅
+### 검증
 
-| 요청 패턴 | 도메인 | 예시 |
-|----------|--------|------|
-| 만들어줘, 구현, 기능, API, 버그 | `dev` | "로그인 페이지 만들어줘" |
-| 디자인, UI, 화면 설계, 목업, 와이어프레임 | `design` | "대시보드 디자인해줘" |
-| 전략, 마케팅, 기획, 캠페인, GTM | `strategy` | "Q3 마케팅 전략 세워줘" |
-| 프로세스, 개선, 온보딩, 워크플로우 | `process` | "코드 리뷰 프로세스 개선해줘" |
-| (감지 불가) | `dev` (기본값) | "이거 좀 고쳔줘" |
+| 테스트 | 입력 | 기대 도메인 | 기대 속성 |
+|--------|------|-----------|----------|
+| 디자인 요청 | "대시보드 디자인해줘" | design | mood + layout + color + hierarchy |
+| 개발 요청 | "대시보드 만들어줘" | dev | functional + visual + interaction |
+| 모호한 요청 | "대시보드 좀 바꿔줘" | 컨텍스트 기반 판단 | 코드 존재 → dev, 디자인 파일만 → design |
+| 크로스 도메인 | "로그인 페이지 디자인하고 만들어줘" | design + dev 복합 | 양쪽 속성 모두 |
 
-### 도메인 공통 원칙
+---
 
-모든 도메인이 공유하는 불변 규칙:
+## v1.0 — 해결사 완성
 
-1. **Never ask. Analyze, decide, output, stop.** 도메인이 뭐든 동일.
-2. **Every choice gets `(reason: ...)`**. 디자인이든 전략이든 근거 필수.
-3. **Match existing context.** 프로젝트에 브랜드 가이드라인이 있으면 따르고, 기존 전략 문서가 있으면 참조.
-4. **Right-size.** 간단한 요청에 30페이지 전략서 쓰지 않는다.
-5. **Constraint is non-negotiable.** 모든 도메인에 제약조건 섹션 존재.
+### 전제 조건
 
-### 검증 계획
+- v0.5.0의 design 도메인이 실사용에서 검증됨
+- 도메인 라우팅 정확도 90%+ 확인
+- 크로스 도메인 spec 품질이 단일 도메인과 동등
 
-| 도메인 | 테스트 요청 | 기대 결과 |
-|--------|-----------|----------|
-| design | "랜딩페이지 디자인해줘" | mood + layout + typography + color + hierarchy spec |
-| strategy | "신규 기능 GTM 전략 세워줘" | target + channel + message + metric + timeline spec |
-| process | "배포 프로세스 개선해줘" | as-is + to-be + steps + metric spec |
-| 크로스도메인 | "새 제품 런칭해줘" | dev + design + strategy 복합 spec |
+### 추가 도메인
+
+| 도메인 | 속성 | 대표 요청 |
+|--------|------|----------|
+| strategy | target, channel, message, metric, timeline, constraint | "Q3 마케팅 전략 세워줘" |
+| process | as-is, to-be, steps, metric, constraint | "코드 리뷰 프로세스 개선해줘" |
+
+### 도메인 공통 원칙 (불변)
+
+1. **Never ask. Analyze, decide, output, stop.** 도메인 무관.
+2. **Every choice gets `(reason: ...)`**. 근거 없는 판단 없음.
+3. **Match existing context.** 프로젝트 기존 자산 우선 참조.
+4. **Right-size.** 간단한 요청에 30줄 보고서 안 씀.
+5. **Constraint is non-negotiable.** 모든 도메인에 제약조건 존재.
 
 ---
 
@@ -172,13 +177,10 @@ speckit/
 - 초기 릴리즈: SKILL.md, 6개 attribute, preset, install.sh
 
 ### v0.2.0 (2026-04-09)
-- Codex 리뷰 기반 품질 개선
-- spec-only 모드 확립 (auto-implement 제거)
-- 10개 이슈 수정 (P0 3개, P1 3개, P2 4개)
+- Codex 리뷰 기반 품질 개선, spec-only 모드 확립
 
 ### v0.3.0 (2026-04-09)
 - 프롬프트 품질 5.2/10 → 9/10 (Codex 2회 검증)
-- 결정적 상태 머신, fast path, decision 누적, 백엔드 지원
 
 ### v0.3.1 (2026-04-09)
 - SKILL.md 레포 루트 이동 (Claude Code 디스커버리 수정)
