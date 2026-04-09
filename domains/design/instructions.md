@@ -110,6 +110,8 @@ Grep("tailwind|styled-components|emotion|css-modules", glob="*.{js,ts,json}", he
 - {brand rules or "no brand constraints"} (reason: ...)
 ### Technical
 - {technical limits affecting design} (reason: ...)
+### Performance
+- {performance constraints affecting design — font loading, image sizes, animation} (reason: ...)
 
 ---
 *Corrections? Tell me what to change. Confirm to proceed.*
