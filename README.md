@@ -125,7 +125,7 @@ cp presets/example-team.json presets/custom.json
 
 ```
 speckit/
-├── skill/spec/SKILL.md    # Main skill (router + spec generator)
+├── SKILL.md               # Main skill (router + spec generator)
 ├── attributes/            # Composable attribute blocks with BAD/GOOD examples
 │   ├── functional.md
 │   ├── visual.md
