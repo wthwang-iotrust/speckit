@@ -4,66 +4,165 @@
 
 > "잘 해줘"는 명세가 아니다.
 
-speckit은 AI를 "해결사"로 만드는 도구다. 모호한 위임을 기준과 근거 기반의 위임으로 전환한다.
-spec 생성에서 시작해, 기준 기반 구현, 프로젝트 수준 판단 누적까지 확장한다.
+speckit은 AI를 "해결사"로 만드는 도구다.
+모호한 위임을 기준과 근거 기반의 위임으로 전환한다. 개발에서 시작하지만, 개발에 머물지 않는다.
+디자인, 전략, 프로세스, 어떤 도메인이든 "알아서 잘"이 필요한 곳에 기준을 세운다.
 
 ```
-v0.2.0 (현재)     v0.3.0              v0.4.0+
-─────────────     ──────              ───────
-spec 생성기   →   해결사 기반 확립  →   팀 협업 도구
-"기준을 만든다"   "기준대로 수행한다"   "기준이 학습된다"
+v0.3.x (현재)     v0.4.0              v1.0
+─────────────     ──────              ────
+개발 spec 생성기   팀 협업 + 학습     도메인 확장 — 해결사 완성
+"기준을 만든다"   "기준이 누적된다"   "어떤 요청이든 기준으로 전환한다"
+```
+
+```
+                    speckit v1.0
+                    ┌─────────┐
+                    │  Router  │ ← "이 화면 디자인해줘" / "마케팅 전략 세워줘" / "API 만들어줘"
+                    └────┬────┘
+           ┌─────────────┼─────────────┐
+           ▼             ▼             ▼
+    ┌──────────┐  ┌──────────┐  ┌──────────┐
+    │ dev/     │  │ design/  │  │ strategy/│  ...
+    │ 기능     │  │ 무드     │  │ 타겟     │
+    │ 시각     │  │ 레이아웃 │  │ 채널     │
+    │ 인터랙션 │  │ 타이포   │  │ KPI      │
+    │ 제약조건 │  │ 컬러     │  │ 제약     │
+    │ 테스트   │  │ 계층구조 │  │ 타임라인 │
+    └──────────┘  └──────────┘  └──────────┘
+           │             │             │
+           ▼             ▼             ▼
+        spec 출력 + (reason: ...) 근거
 ```
 
 ---
 
-## v0.3.0 — 해결사 기반 확립
+## v0.3.0 — 해결사 기반 확립 (완료)
+
+### 달성 결과
+
+- SKILL.md 프롬프트 품질: 5.2/10 → **9/10** (Codex 독립 검증)
+- 결정적 상태 머신: route → context → spec → STOP
+- fast path: trivial 작업 3줄 micro-spec
+- decision 누적 구조 (opt-in)
+- spec → implement 핸드오프 가이드
+- 백엔드 프로젝트 지원
+
+### v0.3.1 (현재)
+
+- SKILL.md 레포 루트로 이동 (Claude Code 스킬 디스커버리 수정)
+
+---
+
+## v0.4.0 — 팀 협업 + 학습
 
 ### 목표
 
-1. SKILL.md 프롬프트 품질을 실전 수준으로 끌어올린다
-2. spec → implement 연결을 만든다
-3. 프로젝트 수준 판단이 누적되는 구조를 만든다
+1. 팀 전체가 같은 기준으로 일한다
+2. 반복되는 판단이 자동으로 축적된다
+3. 실사용 피드백 기반으로 속성 품질을 올린다
 
-### 프롬프트 품질 개선 (평균 5.2/10 → 8/10 목표)
-
-| # | 항목 | 현재 문제 | 수정 방향 | 영향 차원 |
-|---|------|----------|----------|----------|
-| P1 | 지시 충돌 해소 | "STOP" vs "implementation begins" 공존 | footer의 "implementation begins" 제거. STOP이 유일한 종료 지시. spec 확정 후 구현은 별도 스킬이나 사용자 다음 메시지에서 시작. | 지시 계층 |
-| P2 | Phase 0 중간 요약 강제 | 수집만 하고 요약 없음 | Phase 0 끝에 내부 요약 강제: `CONTEXT: stack={}, design_system={}, auth={}, test_framework={}, patterns={}`. Phase 2에서 이 요약을 참조하도록 명시. | 컨텍스트 활용 |
-| P3 | Glob/Grep 구체화 | "Also read with Glob/Grep" (모호) | 구체적 패턴 목록으로 교체. 예: `Grep "export default" glob="*.tsx" \| head -5` / `Grep "className=" glob="*.tsx" \| head -3` / `Glob "**/*.test.*"` | 행동 명확성 |
-| P4 | 분량 가이드 구체화 | "Right-size" (해석 여지) | 섹션별 항목 수 명시. Edge Cases: 2-5개. Business Logic: 1-3개. Test Strategy: 주요 시나리오 3-7개. trivial은 전체 3-5줄, small은 10-20줄, medium은 50-100줄, large는 100줄+. | 출력 제어 |
-| P5 | 에러 복구 경로 추가 | happy path만 존재 | 매 Phase에 fallback 추가. Phase 0 bash 실패 → Glob/Read로 재시도. attribute 파일 없음 → inline 지식으로 진행. 카테고리 판단 불가 → general + 경고 메시지. 사용자 요청 해석 불가 → 가장 가까운 해석으로 진행 + 해석 명시. | 에러 복구 |
-| P6 | 중복 제거 | preset JSON이 SKILL.md에도 있고 파일에도 있음 | SKILL.md 내 JSON 예시 제거. `Read "$SPECKIT_DIR/presets/default.json"` 참조만. | 토큰 효율 |
-
-### 제품 기능
+### 기능
 
 | # | 항목 | 설명 |
 |---|------|------|
-| F1 | spec → implement 연결 | spec 확정 후, 다음 구현 단계에서 spec을 source of truth로 참조하는 지시 추가. "이 spec의 Functional Attributes를 만족하도록 구현하라. 완료 후 Acceptance Criteria로 자가 검증하라." |
-| F2 | 프로젝트 수준 reason 누적 | 반복되는 reason을 `.speckit/decisions.md`에 자동 축적. 다음 spec 생성 시 기존 decisions를 읽고 일관된 판단. 예: "인증은 항상 JWT + httpOnly cookie (reason: 2024-03 보안 감사 결과)" |
-| F3 | 경량 모드 (fast path) | trivial 작업을 감지하면 전체 Phase를 건너뛰고 3-5줄 인라인 spec만 출력. 별도 Output Format 없이 바로 "Spec: {한 줄 요약}\n- {변경 내용}\n- {제약조건}" 형태. |
+| F1 | 팀 decisions 공유 | `.speckit/decisions.md`를 git으로 공유. 팀 전체 판단 기준 통일. 새 멤버도 "우리 팀은 인증을 이렇게 한다"를 자동으로 알게 됨. |
+| F2 | spec 품질 자동 채점 | 생성된 spec의 구체성을 자동 평가. vague 필드 감지 ("fast" → 경고, "LCP < 2.5s" → 통과). 팀 전체 spec 품질 바닥선 유지. |
+| F3 | 다른 스킬과 연동 | gstack `/plan-eng-review`가 spec을 입력으로 받아 리뷰. spec이 구현의 입력이자 리뷰의 기준이 되는 파이프라인. |
+| F4 | spec 히스토리 | 같은 기능의 spec 변경 이력 추적. "2달 전 로그인 spec은 이랬는데 지금은 이렇다". |
 
 ### 검증 계획
 
-| 테스트 | 입력 | 기대 출력 | 검증 기준 |
-|--------|------|----------|----------|
-| 웹 프론트엔드 feature | "북마크 기능 추가해줘" (CBT 앱) | functional + visual + interaction + constraint | visual이 자동 포함되는지, reason이 코드베이스 기반인지 |
-| trivial bugfix | "버튼 색상 #333으로 바꿔줘" | 3-5줄 경량 spec | 과잉 spec 없이 빠르게 끝나는지 |
-| 빈 레포 | "로그인 페이지 만들어줘" | 기본값 기반 full spec | "no existing pattern" reason이 명시되는지 |
-| 백엔드 API | "사용자 CRUD API 만들어줘" (Go 프로젝트) | functional + constraint + test-strategy | visual/interaction이 N/A로 처리되는지 |
-| 모호한 요청 | "이거 좀 고쳐줘" | general 카테고리 + 경고 | fallback이 작동하는지, 해석을 명시하는지 |
-| reason 누적 | 같은 프로젝트에서 2번째 spec | 이전 decisions 참조 | "기존 판단 참조: JWT + httpOnly (decisions.md:3)" |
+- 팀 내 2명 이상이 같은 프로젝트에서 speckit 사용 → decisions 충돌 없이 누적되는지
+- spec 품질 채점이 실제 구현 품질과 상관관계 있는지
+- 기존 gstack 워크플로우에 자연스럽게 끼워지는지
 
 ---
 
-## v0.4.0+ — 팀 협업 도구 (방향성)
+## v1.0 — 도메인 확장, 해결사 완성
 
-아직 확정하지 않음. v0.3.0 실전 검증 후 결정.
+### 핵심 전환
 
-- **팀 decisions 공유** — `.speckit/decisions.md`를 git으로 공유, 팀 전체 판단 기준 통일
-- **spec 히스토리** — 같은 기능의 spec 변경 이력 추적
-- **다른 스킬과 연동** — gstack의 `/plan-eng-review`가 spec을 입력으로 받아 리뷰
-- **spec 품질 평가** — 생성된 spec의 구체성을 자동 채점 (vague 필드 감지)
+speckit이 "개발 명세 도구"에서 **"모든 도메인의 기준 생성기"**로 확장된다.
+"알아서 잘 해줘"가 통하는 모든 영역에서, "이 기준대로 해줘"를 자동 생성한다.
+
+### 도메인 팩 구조
+
+```
+speckit/
+├── SKILL.md                    # 도메인 감지 + 라우팅
+├── domains/
+│   ├── dev/                    # 개발 (현재 speckit의 모든 것)
+│   │   ├── attributes/
+│   │   │   ├── functional.md
+│   │   │   ├── visual.md
+│   │   │   ├── interaction.md
+│   │   │   ├── constraint.md
+│   │   │   ├── test-strategy.md
+│   │   │   └── acceptance.md
+│   │   └── presets/
+│   │
+│   ├── design/                 # 디자인
+│   │   ├── attributes/
+│   │   │   ├── mood.md         # 무드보드, 톤앤매너, 레퍼런스
+│   │   │   ├── layout.md       # 구도, 그리드, 여백, 비율
+│   │   │   ├── typography.md   # 서체, 크기 체계, 행간
+│   │   │   ├── color.md        # 팔레트, 대비, 의미 체계
+│   │   │   ├── hierarchy.md    # 정보 우선순위, 시선 흐름
+│   │   │   └── constraint.md   # 브랜드 가이드라인, 접근성, 매체 제약
+│   │   └── presets/
+│   │
+│   ├── strategy/               # 전략/기획
+│   │   ├── attributes/
+│   │   │   ├── target.md       # 타겟/페르소나, 세그먼트
+│   │   │   ├── channel.md      # 채널, 수단, 터치포인트
+│   │   │   ├── message.md      # 핵심 메시지, 톤, 차별화 포인트
+│   │   │   ├── metric.md       # KPI, 측정 방법, 목표치
+│   │   │   ├── timeline.md     # 일정, 마일스톤, 의존성
+│   │   │   └── constraint.md   # 예산, 리소스, 법적 제약
+│   │   └── presets/
+│   │
+│   └── process/                # 프로세스/운영
+│       ├── attributes/
+│       │   ├── as-is.md        # 현재 상태, 문제점, 측정값
+│       │   ├── to-be.md        # 목표 상태, 개선 방향
+│       │   ├── steps.md        # 단계별 절차, 담당, 도구
+│       │   ├── metric.md       # 측정 지표, 모니터링
+│       │   └── constraint.md   # 제약조건, 변경 관리
+│       └── presets/
+│
+├── presets/                    # 글로벌 프리셋 (도메인 간 공유)
+└── .speckit/decisions.md       # 프로젝트 판단 누적 (도메인 공통)
+```
+
+### 도메인 라우팅
+
+| 요청 패턴 | 도메인 | 예시 |
+|----------|--------|------|
+| 만들어줘, 구현, 기능, API, 버그 | `dev` | "로그인 페이지 만들어줘" |
+| 디자인, UI, 화면 설계, 목업, 와이어프레임 | `design` | "대시보드 디자인해줘" |
+| 전략, 마케팅, 기획, 캠페인, GTM | `strategy` | "Q3 마케팅 전략 세워줘" |
+| 프로세스, 개선, 온보딩, 워크플로우 | `process` | "코드 리뷰 프로세스 개선해줘" |
+| (감지 불가) | `dev` (기본값) | "이거 좀 고쳔줘" |
+
+### 도메인 공통 원칙
+
+모든 도메인이 공유하는 불변 규칙:
+
+1. **Never ask. Analyze, decide, output, stop.** 도메인이 뭐든 동일.
+2. **Every choice gets `(reason: ...)`**. 디자인이든 전략이든 근거 필수.
+3. **Match existing context.** 프로젝트에 브랜드 가이드라인이 있으면 따르고, 기존 전략 문서가 있으면 참조.
+4. **Right-size.** 간단한 요청에 30페이지 전략서 쓰지 않는다.
+5. **Constraint is non-negotiable.** 모든 도메인에 제약조건 섹션 존재.
+
+### 검증 계획
+
+| 도메인 | 테스트 요청 | 기대 결과 |
+|--------|-----------|----------|
+| design | "랜딩페이지 디자인해줘" | mood + layout + typography + color + hierarchy spec |
+| strategy | "신규 기능 GTM 전략 세워줘" | target + channel + message + metric + timeline spec |
+| process | "배포 프로세스 개선해줘" | as-is + to-be + steps + metric spec |
+| 크로스도메인 | "새 제품 런칭해줘" | dev + design + strategy 복합 spec |
 
 ---
 
@@ -76,3 +175,10 @@ spec 생성기   →   해결사 기반 확립  →   팀 협업 도구
 - Codex 리뷰 기반 품질 개선
 - spec-only 모드 확립 (auto-implement 제거)
 - 10개 이슈 수정 (P0 3개, P1 3개, P2 4개)
+
+### v0.3.0 (2026-04-09)
+- 프롬프트 품질 5.2/10 → 9/10 (Codex 2회 검증)
+- 결정적 상태 머신, fast path, decision 누적, 백엔드 지원
+
+### v0.3.1 (2026-04-09)
+- SKILL.md 레포 루트 이동 (Claude Code 디스커버리 수정)
