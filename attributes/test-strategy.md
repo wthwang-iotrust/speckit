@@ -46,16 +46,19 @@ GOOD: "1. Navigate to /signup
        6. Assert: user appears in /api/users (verify DB write)"
 ```
 
-## Visual Regression
+## Visual Regression — include when UI changes exist
 - {component/page}: {screenshot comparison}
 - Responsive: {breakpoints to capture}
 - Tool: {Chromatic/Percy/Playwright screenshots}
 
-## Performance Tests
+## Performance Tests — include when performance constraints are defined
 - {endpoint/page}: {metric → threshold}
 - Load test: {concurrent users, response time target}
 
-## Test Data
+## Test Data — include when tests need fixtures
 - Fixtures: {mock data strategy}
 - Seeds: {database seed approach}
 - Cleanup: {teardown strategy}
+
+Note: In the spec output, all test types fold into a single "### Tests" section.
+List each test with its type prefix: `[unit]`, `[integration]`, `[e2e]`, `[visual]`, `[perf]`.
