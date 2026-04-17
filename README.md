@@ -93,6 +93,8 @@ No questions asked. speckit reads your codebase, makes judgment calls, and shows
 | **constraint** | Performance, security, accessibility | `LCP < 2.5s, WCAG AA, bcrypt cost 12` |
 | **test-strategy** | Unit, integration, E2E test plan | `validateEmail('') → { valid: false }` |
 | **acceptance** | Done criteria, sign-off checklist | `all edge cases handled, a11y audit passed` |
+| **workflow** (design) | Pre-change agreement, reference-first, multi-viewport | `AI confirms structure in text before visual output` |
+| **scope** (design) | Source-of-truth, inclusion, exclusion, copy fidelity | `source has 3 sections → output has 3 sections` |
 
 Each attribute file includes BAD/GOOD examples to enforce specificity.
 
@@ -122,12 +124,14 @@ speckit routes requests to the right domain automatically.
 
 | Category | When | Default attributes |
 |----------|------|--------------------|
-| `ui-design` | Screen/page design | mood, layout, typography, color, hierarchy |
+| `ui-design` | Screen/page design | workflow, scope, mood, layout, typography, color, hierarchy |
 | `branding` | Logo, identity | mood, color, typography, constraint |
-| `wireframe` | Mockups, prototypes | layout, hierarchy, constraint |
-| `visual-audit` | Design review, polish | color, typography, hierarchy, constraint |
+| `wireframe` | Mockups, prototypes | scope, layout, hierarchy, constraint |
+| `visual-audit` | Design review, polish | workflow, color, typography, hierarchy, constraint |
 
 speckit auto-detects domain and category. Multiple categories combine (union of attributes).
+
+**Strict mode for designers:** copy `domains/design/presets/designer-strict.json` to `domains/design/presets/custom.json` to force `workflow` and `scope` attributes on every design spec — surfaces `REFERENCE_REQUIRED`, `SCOPE_AMBIGUOUS`, `COPY_MISSING`, and `MOBILE_VERIFICATION_PENDING` flags inline in the spec output instead of leaving them implicit. Default preset (above) preserves v0.5 output contract; strict mode is explicit opt-in. See `domains/design/pain-points.md` for the full list of designer frustrations this addresses.
 
 ## Team Presets
 
@@ -150,10 +154,11 @@ speckit/
 │   │   ├── instructions.md
 │   │   ├── attributes/ (6 files)
 │   │   └── presets/
-│   └── design/                    # Design domain (v0.5.0)
+│   └── design/                    # Design domain (v0.6.0)
 │       ├── instructions.md
-│       ├── attributes/ (6 files)
-│       └── presets/
+│       ├── attributes/ (8 files — adds workflow, scope)
+│       ├── presets/ (default + designer-strict)
+│       └── pain-points.md         # 7 designer pain points mapped to attributes
 ├── attributes/                    # Legacy (v0.3.x compat)
 ├── presets/                       # Global presets (fallback)
 ├── VERSION

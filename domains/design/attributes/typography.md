@@ -50,3 +50,25 @@ GOOD: "3 distinct levels visible without scrolling:
       (reason: uppercase small labels with tracking is the existing
        pattern in .progress-text)
 ```
+
+## AI Anti-patterns (what AI gets wrong)
+- {common AI mistakes specific to typography} (reason: ...)
+
+```
+BAD:  AI uses inconsistent sizes for same-level content, forgets to distinguish
+      hierarchy levels, introduces off-scale values, and defaults to ALL CAPS
+      for "impact"
+GOOD: "Reject in AI output:
+       - Two pieces of same-level content with different sizes
+         ('이 두개가 같은 레벨인데 전혀 다른 폰트 사이즈')
+       - Off-scale values (17px, 19px, 22px when scale is 12/14/16/20/24)
+       - Identical size + weight across two hierarchy levels
+         ('if two levels look the same, one is unnecessary')
+       - ALL CAPS used for body text or long copy (reduces readability)
+       - Uppercase without positive letter-spacing
+       - Line-height < 1.4 for body text (cramped reading)
+       - Line length > 75ch (eye has to track too far)
+       - Mixing 3+ font families without reason"
+      (reason: these violations break information hierarchy — the single most
+       common reason a design feels 'off' even when individual choices look fine)
+```

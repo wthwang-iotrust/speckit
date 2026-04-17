@@ -51,3 +51,24 @@ GOOD: "Dark-only for v1. If light mode needed later:
        Use prefers-color-scheme media query for auto-detection."
       (reason: current app is dark-only, light mode is a future decision)
 ```
+
+## AI Anti-patterns (what AI gets wrong)
+- {common AI mistakes specific to color} (reason: ...)
+
+```
+BAD:  AI introduces slightly-off hex values, over-uses accent for emphasis,
+      mixes warm/cool grays, and adds gradients not in the system
+GOOD: "Reject in AI output:
+       - Off-palette colors (#3a82f6 instead of system's #3b82f6)
+       - Random grays not sourced from the defined scale
+       - Mixing warm and cool grays in the same screen
+       - Accent color used on 5+ elements per screen (loses emphasis meaning)
+       - Gradients on brand elements when brand rules forbid gradients
+       - Semantic drift: red used for non-error states, green for non-success
+       - Low-contrast text claiming to be 'subtle' (#6b7280 on #f3f4f6 ≈ 3.4:1, fails AA)
+       - Pure black (#000) or pure white (#FFF) on screens —
+         usually too harsh; should be slightly off
+       - Color alone conveying meaning (fails a11y — need icon or label too)"
+      (reason: designers notice 1px shade drifts; these drifts accumulate into
+       a visibly inconsistent product even when each choice seemed 'close enough')
+```

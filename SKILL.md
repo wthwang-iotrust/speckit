@@ -1,6 +1,6 @@
 ---
 name: speckit
-version: 0.5.0
+version: 0.6.0
 description: |
   AI-driven spec generator. Analyzes user request + codebase context to produce
   structured specifications before implementation. Replaces vague "do it well"
@@ -249,7 +249,7 @@ current domain. If not, skip it and try the next in the cascade.
 
 **Valid attributes per domain:**
 - **dev:** functional, visual, interaction, constraint, test-strategy, acceptance
-- **design:** mood, layout, typography, color, hierarchy, constraint
+- **design:** workflow, scope, mood, layout, typography, color, hierarchy, constraint
 
 If the preset references anything outside the domain's valid list, ignore it.
 

@@ -51,3 +51,41 @@ GOOD: "Top-down single column:
       (reason: mobile-first, user-scalable=no — this is a focused
        task app, not a dashboard)
 ```
+
+## Scope Guard
+- {what hierarchy decisions are off-limits without source authorization} (reason: ...)
+
+```
+BAD:  AI invents a CTA because "every page should have a primary action"
+GOOD: "Hierarchy elements MUST come from the source:
+       - CTAs: only if source has them. No inventing 'Learn More' / 'Get Started'
+       - Badges / trust signals: only if source has them
+       - Secondary nav links: only if source has them
+       - Icons beside text: only if source specifies them
+       If source has no clear primary element, AI asks:
+       '이 화면의 primary action이 뭔가요? 없으면 hierarchy 재설계 필요합니다.'
+       AI never assigns primary status to an invented element."
+      (reason: hierarchy invention is the #1 way AI silently expands scope —
+       adding CTAs and prominence to elements the designer never wanted
+       emphasized. See scope.md for full scope rules.)
+```
+
+## AI Anti-patterns (what AI gets wrong)
+- {common AI mistakes specific to hierarchy} (reason: ...)
+
+```
+BAD:  AI creates equal visual weight across all elements, decorates secondary
+      content with the same prominence as primary, and buries the main action
+GOOD: "Reject in AI output:
+       - Everything bold or everything medium weight (no hierarchy)
+       - Primary CTA same color/weight as secondary actions
+         (filled button + 4 outline buttons competing for attention)
+       - Decorative icons drawing the eye away from content
+       - Multiple 'primary' actions visible at once (pick one)
+       - Hero section with 3 equally-sized side-by-side elements and no focal point
+       - Equal spacing above/below primary content making it blend with sections
+       - Section labels larger than section content (inverted hierarchy)
+       - Every card having the same visual treatment regardless of importance"
+      (reason: squint test failure — when everything has equal weight,
+       nothing has weight, and users don't know what to look at first)
+```

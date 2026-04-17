@@ -27,16 +27,20 @@ GOOD: "8px base unit. Scale: 4/8/12/16/24/32/48/64.
 ```
 
 ## Responsive
-- {breakpoint strategy} (reason: ...)
+- {breakpoint strategy with simultaneous verification rule} (reason: ...)
 
 ```
 BAD:  "make it responsive"
+      (also BAD: "desktop now, mobile later" — mobile-as-afterthought pattern)
 GOOD: "Mobile-first. Breakpoints: 375px (phone), 768px (tablet), 1024px (desktop).
        Phone: single column, full-width cards.
        Tablet: 2-column where content allows.
-       Desktop: sidebar + main, or 3-column grid."
-      (reason: existing meta viewport has user-scalable=no,
-       mobile is primary target)
+       Desktop: sidebar + main, or 3-column grid.
+       VERIFICATION RULE: every layout decision must be verified at
+       375px AND ≥1024px in the SAME output. No 'I'll check mobile next.'"
+      (reason: mobile bugs discovered after desktop is finalized require
+       re-deciding desktop structure — doubling the work. Simultaneous
+       verification catches breaks before they compound.)
 ```
 
 ## Composition
@@ -47,4 +51,22 @@ BAD:  "clean layout"
 GOOD: "Z-pattern for landing: logo top-left → CTA top-right → hero center →
        secondary actions bottom. Dashboard: fixed sidebar nav + scrollable main."
       (reason: F-pattern for content-heavy, Z-pattern for action-oriented)
+```
+
+## AI Anti-patterns (what AI gets wrong)
+- {common AI mistakes specific to layout} (reason: ...)
+
+```
+BAD:  AI generates layout that works on desktop only, with 5+ violations of
+      the declared spacing scale, and invented section containers not in source
+GOOD: "Reject in AI output:
+       - Desktop-only layout — no mobile consideration shown
+       - Off-grid spacing (17px, 23px, arbitrary values not from the scale)
+       - Centered max-width applied to content that was never centered in source
+       - 'Helper' containers / wrappers that weren't in the wireframe
+       - Horizontal scroll on mobile from fixed-width desktop components
+       - Sidebar layout forced onto content that doesn't need navigation
+       - Hero-sized whitespace where the design was meant to be dense"
+      (reason: these are the most common layout drift patterns in AI output;
+       calling them out explicitly makes them easier to catch in review)
 ```
