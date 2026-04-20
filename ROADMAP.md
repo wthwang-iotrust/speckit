@@ -146,6 +146,56 @@ domains/design/
 
 ---
 
+## v0.6.0 — 디자이너 현실 반영 (Designer Reality)
+
+### 목표
+
+1. 실제 디자이너가 AI와 작업하며 겪는 7가지 반복 고충을 design 도메인에 구조화
+2. 스펙 단계에서 "변경 전 합의" / "스코프 가드" / "레퍼런스 필수" 강제
+3. 6개 기존 속성에 AI Anti-patterns 섹션 추가 — AI의 기본 실수 패턴을 미리 차단
+
+### 해결하는 고충 (pain points)
+
+| # | 고충 | 담당 속성 |
+|---|------|----------|
+| 1 | 5~10회 반복 수정 루프 | workflow (Pre-change Agreement, Iteration Prevention) |
+| 2 | 원본에 없는 섹션/CTA/뱃지 임의 추가 | scope (Inclusion, Exclusion, Addition Policy) |
+| 3 | 모바일이 후순위라 데스크톱 완성 후 깨짐 발견 | layout (Responsive VERIFICATION RULE), workflow (Multi-viewport) |
+| 4 | "이런 느낌으로" 5라운드 오해 | workflow (Reference-first Rule), mood (Reference Requirement) |
+| 5 | 디자인 토큰 드리프트 (거의 비슷한 hex/px) | constraint (Design System Token Adherence) |
+| 6 | 카피 환각 (원본에 없는 문구/수치 생성) | scope (Copy Fidelity) |
+| 7 | 점진적 피드백의 패치 누적 | workflow (Iteration Prevention) |
+
+### 작업
+
+| # | 항목 | 설명 |
+|---|------|------|
+| N1 | 신규 속성 workflow.md | 변경 전 합의, 체크리스트, 반복 방지, 멀티 뷰포트, 레퍼런스 필수, 스코프 확인 |
+| N2 | 신규 속성 scope.md | 소스 단일 근거, inclusion/exclusion, 추가 정책, 수정 경계, 카피 충실성 |
+| E1 | 6개 속성에 AI Anti-patterns 섹션 추가 | mood / layout / typography / color / hierarchy / constraint |
+| E2 | mood.md — Reference Requirement 섹션 | 주관적 형용사 → 레퍼런스 강제 |
+| E3 | layout.md — Responsive VERIFICATION RULE 강화 | 데스크톱/모바일 동시 검증 규정 |
+| E4 | hierarchy.md — Scope Guard 섹션 | 원본에 없는 primary 요소 발명 금지 |
+| E5 | constraint.md — Design System Token Adherence | 기존 토큰만 사용, ad-hoc 값 금지 |
+| P1 | presets/designer-strict.json 추가 | 모든 카테고리에 workflow + scope 포함 |
+| P2 | presets/default.json 업데이트 | ui-design / wireframe / visual-audit에 workflow·scope 선택 추가 |
+| D1 | pain-points.md 메타 문서 | 7가지 고충과 각 속성의 대응 매핑 |
+| D2 | instructions.md 업데이트 | 카테고리, 라우팅 룰, 기본값, 섹션 카운트, 출력 템플릿 반영 |
+| D3 | SKILL.md 업데이트 | design 도메인 valid attributes에 workflow, scope 추가 |
+| D4 | README.md 업데이트 | Design Categories 표에 workflow/scope 반영 |
+
+### 검증
+
+| 테스트 | 입력 | 기대 동작 |
+|--------|------|----------|
+| 주관적 언어 | "좀 더 모던하게 해줘" | workflow의 Reference-first로 레퍼런스 요청 |
+| 소스 제공 | "이 와이어프레임대로 만들어" | scope 활성화, Copy Fidelity 규칙 적용 |
+| 수정 요청 | "이 페이지 좀 개선해" | workflow + scope 둘 다 활성화 |
+| 토큰 존재 프로젝트 | CSS 변수 detected | constraint의 Token Adherence 자동 강화 |
+| 점진적 피드백 3+ 이슈 | "A도 고치고 B도 고치고..." | workflow의 Iteration Prevention으로 consolidated rewrite 제안 |
+
+---
+
 ## v1.0 — 해결사 완성
 
 ### 전제 조건

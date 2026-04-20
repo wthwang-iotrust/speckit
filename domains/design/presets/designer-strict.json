@@ -1,0 +1,8 @@
+{
+  "_comment": "Strict preset for designers who have experienced AI scope creep, invented content, mobile afterthought, and endless revision loops. Forces workflow protocol, scope guards, and anti-pattern awareness across all design requests.",
+  "ui-design": ["workflow", "scope", "mood", "layout", "typography", "color", "hierarchy", "constraint"],
+  "branding": ["workflow", "scope", "mood", "color", "typography", "constraint"],
+  "wireframe": ["workflow", "scope", "layout", "hierarchy", "constraint"],
+  "visual-audit": ["workflow", "scope", "color", "typography", "hierarchy", "constraint"],
+  "general": ["workflow", "scope", "mood", "layout", "color", "hierarchy", "constraint"]
+}
